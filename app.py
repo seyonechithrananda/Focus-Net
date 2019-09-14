@@ -1,12 +1,33 @@
-# adoption_site.py
+# app.py
 import os
-from forms import AddForm, DeleteForm, OwnerForm
+import socket
+import struct
+import numpy as np
+from keras.models import load_model
+from forms import IPForm
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'key'
+
+sock = socket.socket(socket.AF_INET, # Internet
+                    socket.SOCK_DGRAM) # UDP
+
+data= []
+
+def getBand(band):
+    while True:
+        data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+        if band in str(data):
+            break
+    title,args,flt1,flt2,flt3,flt4 = struct.unpack('>36s8sffff', data)
+    EEG = [flt1, flt2, flt3, flt4]
+    print(EEG)
+    return np.array(EEG)
+
+
 
 #########################
 ##### SQL DATABASE ######
@@ -58,11 +79,26 @@ class Owner(db.Model):
 ###########################
 
 
-@app.route('/')
+@app.route('/', methods=["GET", "POST"])
 def index():
-    return render_template('index.html')
+    form = IPForm()
 
+    if form.validate_on_submit():
+        UDP_IP = form.address.data
+        UDP_PORT = form.port.data
+        sock.bind((UDP_IP, UDP_PORT))
+        return redirect(url_for('dashboard'))     
 
+    
+    return render_template('index.html', form=form)
+
+@app.route('/dashboard', methods=["GET", "POST"])
+def dashboard():
+    while True:
+        data.append(getBand('gamma_absolute'))
+        return render_template('dashboard.html', data=data)
+
+'''
 @app.route('/add', methods=['GET', 'POST'])
 def add_pup():
 
@@ -78,7 +114,6 @@ def add_pup():
         return redirect(url_for('list_pup'))
 
     return render_template('add.html', form=form)
-
 
 @app.route('/list')
 def list_pup():
@@ -114,7 +149,7 @@ def add_owner():
 
     return render_template("owner.html", form=form)
 
-
+'''
 
 if __name__ == '__main__':
     app.run(debug=True)
