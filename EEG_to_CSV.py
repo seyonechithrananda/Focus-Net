@@ -23,6 +23,4 @@ while True:
         print(flt1, flt2, flt3, flt4)
         with open('EEG_data.csv', 'a+') as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerow([flt2,flt3])
-        print ('data recorded in CSV')
-        print('----------------------------------')
+            csv_writer.writerow([flt1, flt2, flt3, flt4])
