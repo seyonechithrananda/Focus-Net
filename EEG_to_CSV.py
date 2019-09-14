@@ -7,8 +7,8 @@ print('Program Initiated')
 hostname = socket.gethostname()
 IPAddr = socket.gethostbyname(hostname)
 
-
-UDP_IP = IPAddr
+UDP_IP = "10.33.133.249"
+print(UDP_IP)
 UDP_PORT = 7000
 
 sock = socket.socket(socket.AF_INET, # Internet
