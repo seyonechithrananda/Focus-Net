@@ -6,16 +6,31 @@
     }
   </style>
   <script src="http://code.jquery.com/jquery-latest.js"></script>
-  <script>
-  if (!!window.EventSource) {
-    var source = new EventSource('/');
-    source.onmessage = function(e) {
-      $("#data").text(e.data);
-    }
-  }
-  </script>
-  <div id="data">nothing received yet</div>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+  <script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        // Use a "/test" namespace.
+        // An application can open a connection on multiple namespaces, and
+        // Socket.IO will multiplex all those connections on a single
+        // physical channel. If you don't care about multiple channels, you
+        // can set the namespace to an empty string.
 
+        // Connect to the Socket.IO server.
+        // The connection URL has the following format, relative to the current page:
+        //     http[s]://<domain>:<port>[/<namespace>]
+        var socket = io();
+
+        // Event handler for new connections.
+        // The callback function is invoked when a connection with the
+        // server is established.
+        socket.on('connect', function() {
+          console.log("Client connected");
+        });
+        socket.on("EEG", function(data) {
+          console.log(data);
+        });    
+    });
+  </script>
   
   <div class="jumbotron">
     <h1>Welcome to Your Focus-Net Dashboard</h1>

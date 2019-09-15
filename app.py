@@ -1,32 +1,45 @@
 # app.py
-import os
-import socket
-import struct
+import os, socket, struct, json
 import numpy as np
-from keras.models import load_model
+import torch
 from forms import IPForm
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_socketio import SocketIO, send, join_room, leave_room
+import _thread, time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'key'
-
+socketio = SocketIO(app)
 sock = socket.socket(socket.AF_INET, # Internet
                     socket.SOCK_DGRAM) # UDP
 
 data= []
 
-def getBand(band):
+def getBand():
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-        if band in str(data):
+        if "gamma_absolute" in str(data):
             break
     title,args,flt1,flt2,flt3,flt4 = struct.unpack('>36s8sffff', data)
     EEG = [flt1, flt2, flt3, flt4]
     print(EEG)
+    socketio.emit("EEG", json.dumps(EEG), json=True, broadcast=True)
+    print('sent message')
     return np.array(EEG)
 
+def streamLoop():
+    while True:
+        time.sleep(0.5)
+        getBand()
+
+try:
+    _thread.start_new_thread(streamLoop)
+
+except:
+    print('Error! ----')
+print('Success')
 
 
 #########################
@@ -95,10 +108,20 @@ def index():
 
 @app.route('/dashboard', methods=["GET", "POST"])
 def dashboard():
-    while True:
-        data.append(getBand('gamma_absolute'))
-        return render_template('dashboard.html', data=data)
+    return render_template('dashboard.html', data=data)
 
+@socketio.on('join')
+def on_join(data):
+    join_room('clients')
+    print("User Connected")
+    #send(username + ' has entered the room.', room=room)
+
+@socketio.on('leave')
+def on_leave(data):
+    leave_room('clients')
+    print("User Disconnected")
+
+    #send(username + ' has left the room.', room=room)
 '''
 @app.route('/add', methods=['GET', 'POST'])
 def add_pup():
@@ -153,4 +176,4 @@ def add_owner():
 '''
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app)
