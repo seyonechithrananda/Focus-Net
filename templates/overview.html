@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-  
+  <script src=“https://www.gstatic.com/firebasejs/6.6.1/firebase-database.js“></script>
+  <script src=“https://www.gstatic.com/firebasejs/6.6.1/firebase-app.js”></script>
   <script src="http://code.jquery.com/jquery-latest.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
   <script type="text/javascript" charset="utf-8">
 
-    var firebaseConfig = {
+      var firebaseConfig = {
         apiKey: "AIzaSyDhwAFrV59IrLW4RvVzIPlNlZHEQHRpfhU",
         authDomain: "hackthenorth2019-f2fcd.firebaseapp.com",
         databaseURL: "https://hackthenorth2019-f2fcd.firebaseio.com",
@@ -15,32 +16,30 @@
         appId: "1:65543075988:web:d3a4b3723e27d4a39f1c81"
         };
 
-    firebase.initializeApp(firebaseConfig);
-    const appDb = firebase.database().ref();
+      firebase.initializeApp(firebaseConfig);
+      const appDb = firebase.database().ref();
     $(document).ready(function() {
         
-      var socket = io();
-      FlaskData = []
+        var socket = io();
+        FlaskData = []
 
-      socket.on('connect', function() {
-        console.log("Client connected");
-      });
-      socket.on("EEG", function(data) {
-        // YOU CAN ACCESS THE DATA VARIABLES WITHIN THIS AREA
-        // DB needs to have datetime, focusscore, + current site 
-
-        FlaskData = JSON.parse(data)
-        console.log(FlaskData)
-        var focus = FlaskData[1]
-        var timestamp = FlaskData[0]
-
-        appDb.child("Focus Entry")
-        appDb.once('value').then(function(snapshot) {
-          var URL = snapshot.child("ActiveURL").val();
-
-          appDb.push().set({'FocalHistory': FlaskData});
+        socket.on('connect', function() {
+          console.log("Client connected");
         });
-      });    
+        socket.on("EEG", function(data) {
+          // YOU CAN ACCESS THE DATA VARIABLES WITHIN THIS AREA
+          // DB needs to have datetime, focusscore, + current site 
+
+          FlaskData = data
+          appDb.on('ActiveURL', function(snapshot) {
+            var URL = snapshot.val();
+            FlaskData.append(URL)
+          });
+
+          appDb.child("FocusHistory").push().setValue(FlaskData);
+          console.log(FlaskData)
+
+        });    
     });
   </script>
   
