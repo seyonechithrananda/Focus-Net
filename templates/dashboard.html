@@ -41,6 +41,8 @@
         var focus = FlaskData[1]
         var timestamp = FlaskData[0]
 
+        document.getElementById("focusScore").innerHTML = "Focus Score: "  + str(focus)
+
 
 /*
         root
@@ -86,6 +88,14 @@
         });
       })
 
+    var total = 0;
+    for (var i = 0; i<levels.length; i++){
+      total+=levels[i];
+    }
+
+    var avg = total/levels.length;
+
+
   </script>
 
   appDb.child("Views").child(btoa(currentSite))
@@ -96,4 +106,10 @@
     
 
   </div>
+
+  <body> 
+    <h1 id="focusScore">Focus Score: 98</h1>
+
+  </body>
+
 {% endblock %}
