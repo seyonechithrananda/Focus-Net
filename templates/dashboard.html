@@ -15,6 +15,8 @@
         appId: "1:65543075988:web:d3a4b3723e27d4a39f1c81"
         };
 
+    let started_focus = new Date();
+
     firebase.initializeApp(firebaseConfig);
     const appDb = firebase.database().ref();
     var currentSite = ''
@@ -40,6 +42,17 @@
         console.log(FlaskData)
         var focus = FlaskData[1]
         var timestamp = FlaskData[0]
+
+        // Plays sound if unfocused for more than 30 seconds
+        if (focus > 50){
+          started_focus = new Date()
+        }
+        if (new Date() - started_focus > 30000){
+          var audio = new Audio('audio_file.mp3');
+          window.onload=function(){
+            audio.play();
+          }
+        }
 
 
 /*
