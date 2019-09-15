@@ -1,7 +1,10 @@
 # app.py
 import os, socket, struct, json
+import datetime
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from forms import IPForm
 from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
@@ -14,18 +17,49 @@ app.config['SECRET_KEY'] = 'key'
 socketio = SocketIO(app)
 sock = socket.socket(socket.AF_INET, # Internet
                     socket.SOCK_DGRAM) # UDP
-
 data= []
+
+##############
+## AI MODEL ##
+##############
+
+state_dict = torch.load("EEG_Model.pth")
+class EEG_Model(nn.Module):
+    def __init__(self):
+        super(EEG_Model, self).__init__()
+        self.fc1 = nn.Linear(3, 15)
+        self.fc2 = nn.Linear(15, 15)
+        self.fc3 = nn.Linear(15, 1)
+        self.dropout = nn.Dropout(0.2)
+        
+    def forward(self, x):
+        # add layer, with relu activation function
+        x = F.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.relu(self.fc2(x))
+        x = self.dropout(x)
+        x = F.sigmoid(self.fc3(x))        
+        return x
+
+# initialize the NN
+model = EEG_Model()
+model = model.double()
+model.load_state_dict(torch.load('EEG_Model.pth'))
+model.eval()
 
 def getBand():
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         if "gamma_absolute" in str(data):
             break
-    title,args,flt1,flt2,flt3,flt4 = struct.unpack('>36s8sffff', data)
-    EEG = [flt1, flt2, flt3, flt4]
+    title, args, flt1, flt2, flt3, flt4 = struct.unpack('>36s8sffff', data)
+    EEG = np.array([flt1, flt3, flt4])
+    EEG = torch.from_numpy(EEG)
+    focus = int(model(EEG) * 100)
+    date = str(datetime.datetime.now())
     print(EEG)
-    socketio.emit("EEG", json.dumps(EEG), json=True, broadcast=True)
+    package = [date, focus]
+    socketio.emit("EEG", json.dumps(package), json=True, broadcast=True)
     print('sent message')
     return np.array(EEG)
 

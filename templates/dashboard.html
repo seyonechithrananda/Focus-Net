@@ -1,44 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-    #data {
-      text-align: center;
-    }
-  </style>
+  
   <script src="http://code.jquery.com/jquery-latest.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
   <script type="text/javascript" charset="utf-8">
+
+    var firebaseConfig = {
+        apiKey: "AIzaSyDhwAFrV59IrLW4RvVzIPlNlZHEQHRpfhU",
+        authDomain: "hackthenorth2019-f2fcd.firebaseapp.com",
+        databaseURL: "https://hackthenorth2019-f2fcd.firebaseio.com",
+        projectId: "hackthenorth2019-f2fcd",
+        storageBucket: "",
+        messagingSenderId: "65543075988",
+        appId: "1:65543075988:web:d3a4b3723e27d4a39f1c81"
+        };
+
+    firebase.initializeApp(firebaseConfig);
+    const appDb = firebase.database().ref();
+    var currentSite = ''
+
     $(document).ready(function() {
-        // Use a "/test" namespace.
-        // An application can open a connection on multiple namespaces, and
-        // Socket.IO will multiplex all those connections on a single
-        // physical channel. If you don't care about multiple channels, you
-        // can set the namespace to an empty string.
+      
+      appDb.child("ActiveURL")
+      .on('value', function(snapshot){
+        currentSite = snapshot.val()
+      })
 
-        // Connect to the Socket.IO server.
-        // The connection URL has the following format, relative to the current page:
-        //     http[s]://<domain>:<port>[/<namespace>]
-        var socket = io();
+      var socket = io();
+      FlaskData = []
 
-        // Event handler for new connections.
-        // The callback function is invoked when a connection with the
-        // server is established.
-        socket.on('connect', function() {
-          console.log("Client connected");
-        });
-        socket.on("EEG", function(data) {
-          console.log(data);
-        });    
+      socket.on('connect', function() {
+        console.log("Client connected");
+      });
+      socket.on("EEG", function(data) {
+        // YOU CAN ACCESS THE DATA VARIABLES WITHIN THIS AREA
+        // DB needs to have datetime, focusscore, + current site 
+
+        FlaskData = JSON.parse(data)
+        console.log(FlaskData)
+        var focus = FlaskData[1]
+        var timestamp = FlaskData[0]
+
+
+/*
+        root
+        - VIEWS
+          - google
+            - metadata
+            - events
+              - autoID
+                - time
+                - focus
+              - autoID
+                - time
+                - focus
+              - autoID
+                - time
+                - focus
+          - facebook
+            - autoID
+              - time
+              - focus
+            - autoID
+              - time
+              - focus
+            - autoID
+              - time
+              - focus
+
+        - USERS
+        - WEBSITES
+*/
+      appDb.child("Views").child(btoa(currentSite)).child("metadata").set({website:currentSite, latestFocus:focus, latestTime:timestamp})
+      appDb.child("Views").child(btoa(currentSite)).child("events").push().set({focus:focus, time:timestamp})
+      });    
     });
+
+    var levels = []
+
+    appDb.child("Views").child(btoa(currentSite)).child("events")
+      .onSnapshot(function(snapshots){
+        levels = []
+        snapshots.forEach(element => {
+          levels.push(element.data().focus)
+        });
+      })
+
   </script>
+
+  appDb.child("Views").child(btoa(currentSite))
   
   <div class="jumbotron">
     <h1>Welcome to Your Focus-Net Dashboard</h1>
     <ul>
-      {% for info in data %}
-        <li>{{info}}</li>
-      {% endfor %}
-    </ul>
+    
 
   </div>
 {% endblock %}
