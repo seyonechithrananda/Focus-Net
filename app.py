@@ -86,6 +86,7 @@ def index():
     if form.validate_on_submit():
         UDP_IP = form.address.data
         UDP_PORT = form.port.data
+        print(UDP_IP, UDP_PORT)
         sock.bind((UDP_IP, UDP_PORT))
         return redirect(url_for('dashboard'))     
 
