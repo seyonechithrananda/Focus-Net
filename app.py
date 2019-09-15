@@ -2,11 +2,10 @@
 import os
 import socket
 import struct
-#from requests import request
 import numpy as np
 from keras.models import load_model
 from forms import IPForm
-from flask import Flask, render_template, redirect, url_for, request
+from flask import Flask, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -87,6 +86,7 @@ def index():
     if form.validate_on_submit():
         UDP_IP = form.address.data
         UDP_PORT = form.port.data
+        print(UDP_IP, UDP_PORT)
         sock.bind((UDP_IP, UDP_PORT))
         return redirect(url_for('dashboard'))     
 
@@ -95,13 +95,10 @@ def index():
 
 @app.route('/dashboard', methods=["GET", "POST"])
 def dashboard():
-    if request.headers.get('accept') == 'text/event-stream':
-        def events():
-            for i, c in enumerate(itertools.cycle('\|/-')):
-                yield "data: %s %d\n\n" % (c, i)
-                time.sleep(.1)  # an artificial delay
-        return Response(events(), content_type='text/event-stream')
-    return render_template('dashboard.html')
+    while True:
+        data.append(getBand('gamma_absolute'))
+        return render_template('dashboard.html', data=data)
+
 '''
 @app.route('/add', methods=['GET', 'POST'])
 def add_pup():
